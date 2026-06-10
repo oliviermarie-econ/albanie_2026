@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Albanie · Mariage Erlinda & David · Juillet 2026</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy: #1a3a5c;
+    --gold: #c9a84c;
+    --red: #c0392b;
+    --green: #2a7a5c;
+    --orange: #e8883a;
+    --sand: #f7f3ee;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--sand);
+    color: #2c2c2c;
+  }
+
+  header {
+    background: var(--navy);
+    color: white;
+    text-align: center;
+    padding: 40px 24px 32px;
+  }
+
+  .eyebrow {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 4px;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(24px, 5vw, 38px);
+    margin-bottom: 8px;
+  }
+
+  header p {
+    font-size: 13px;
+    color: rgba(255,255,255,0.6);
+    font-weight: 300;
+  }
+
+  .gold-line { width: 40px; height: 2px; background: var(--gold); margin: 16px auto; }
+
+  #map {
+    width: 100%;
+    height: 480px;
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 14px 20px;
+    background: white;
+    border-bottom: 1px solid #eee;
+    font-size: 12px;
+    justify-content: center;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #555;
+  }
+
+  .legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 0 0 1px #ccc;
+    flex-shrink: 0;
+  }
+
+  main {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 32px 16px 60px;
+  }
+
+  .flights {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 36px;
+  }
+
+  @media (max-width: 480px) { .flights { grid-template-columns: 1fr; } }
+
+  .flight-card {
+    background: white;
+    border-radius: 10px;
+    padding: 16px 18px;
+    border-top: 3px solid var(--navy);
+  }
+
+  .flight-card .dir {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #999;
+    margin-bottom: 5px;
+  }
+
+  .flight-card .route { font-size: 14px; font-weight: 500; color: var(--navy); margin-bottom: 3px; }
+  .flight-card .detail { font-size: 12px; color: #888; line-height: 1.5; }
+
+  .section-label {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #999;
+    margin-bottom: 18px;
+  }
+
+  .timeline { position: relative; padding-left: 0; }
+
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 35px;
+    top: 0; bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--orange), var(--navy), var(--red), var(--green), var(--navy));
+    opacity: 0.2;
+  }
+
+  .day { display: flex; gap: 18px; margin-bottom: 14px; align-items: flex-start; }
+
+  .day-badge {
+    flex-shrink: 0;
+    width: 70px;
+    text-align: center;
+    padding-top: 14px;
+  }
+
+  .day-badge .num {
+    font-family: 'Playfair Display', serif;
+    font-size: 34px;
+    font-weight: 700;
+    line-height: 1;
+    display: block;
+  }
+
+  .day-badge .weekday {
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #999;
+    display: block;
+    margin-top: 2px;
+  }
+
+  .day-card {
+    flex: 1;
+    background: white;
+    border-radius: 12px;
+    padding: 16px 18px;
+    border-left: 4px solid var(--navy);
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+
+  .day-card:hover {
+    transform: translateX(3px);
+    box-shadow: -3px 0 0 var(--gold), 2px 4px 12px rgba(0,0,0,0.08);
+  }
+
+  .day-card.wedding {
+    border-left-color: var(--red);
+    background: #fff9f0;
+  }
+
+  .day-card h3 { font-size: 15px; font-weight: 500; color: var(--navy); margin-bottom: 8px; }
+
+  .event { display: flex; gap: 8px; margin-bottom: 6px; font-size: 13px; line-height: 1.5; }
+  .event:last-child { margin-bottom: 0; }
+  .event-time { flex-shrink: 0; font-size: 11px; color: #aaa; width: 36px; padding-top: 1px; font-weight: 500; }
+  .event-name { font-weight: 500; }
+  .event-note { display: block; font-size: 11px; color: #999; margin-top: 1px; }
+
+  .wedding-badge {
+    display: inline-block;
+    background: var(--red);
+    color: white;
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 20px;
+    margin-bottom: 8px;
+  }
+
+  .hotels {
+    margin-top: 36px;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .hotels-header {
+    background: var(--navy);
+    color: white;
+    padding: 12px 18px;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+
+  .hotel-row {
+    display: flex;
+    align-items: center;
+    padding: 13px 18px;
+    border-bottom: 1px solid #f5f5f5;
+    gap: 10px;
+  }
+
+  .hotel-row:last-child { border-bottom: none; }
+  .hotel-dates { font-size: 11px; color: #aaa; width: 76px; flex-shrink: 0; font-weight: 500; }
+  .hotel-name { flex: 1; font-size: 13px; font-weight: 500; color: var(--navy); }
+  .hotel-name a { color: inherit; text-decoration: none; border-bottom: 1px solid var(--gold); }
+  .hotel-place { font-size: 11px; color: #aaa; }
+
+  footer {
+    text-align: center;
+    padding: 28px;
+    font-size: 11px;
+    color: #bbb;
+    letter-spacing: 0.5px;
+  }
+
+  .leaflet-popup-content-wrapper {
+    border-radius: 10px !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15) !important;
+    border-top: 3px solid var(--navy);
+  }
+
+  .popup-day {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #aaa;
+    margin-bottom: 4px;
+  }
+
+  .popup-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--navy);
+    margin-bottom: 4px;
+  }
+
+  .popup-detail {
+    font-size: 12px;
+    color: #666;
+    line-height: 1.5;
+  }
+
+  .popup-wedding { border-top-color: var(--red) !important; }
+</style>
+</head>
+<body>
+
+<header>
+  <p class="eyebrow">Albanie · Juillet 2026</p>
+  <h1>Mariage d'Erlinda &amp; David</h1>
+  <div class="gold-line"></div>
+  <p>Olivier &amp; Sandra · 10 au 14 juillet 2026</p>
+</header>
+
+<div id="map"></div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#e8883a"></div> Hébergement</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#c0392b"></div> Cérémonie du mariage</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#2a7a5c"></div> Brunch / Lezhë</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#1a3a5c"></div> Tirana (vols)</div>
+</div>
+
+<main>
+
+  <div class="flights">
+    <div class="flight-card">
+      <p class="dir">✈ Aller</p>
+      <p class="route">Bruxelles → Tirana</p>
+      <p class="detail">Ryanair FR8298<br>Ven. 10 juil. · 14h05 → 16h35</p>
+    </div>
+    <div class="flight-card">
+      <p class="dir">✈ Retour</p>
+      <p class="route">Tirana → Amsterdam</p>
+      <p class="detail">Transavia HV6936<br>Mar. 14 juil. · 21h15 → 00h05</p>
+    </div>
+  </div>
+
+  <p class="section-label">Programme jour par jour</p>
+
+  <div class="timeline">
+
+    <div class="day" onclick="flyTo(41.5167, 19.5537, 13)">
+      <div class="day-badge" style="color:var(--orange)">
+        <span class="num">10</span>
+        <span class="weekday">Vendredi</span>
+      </div>
+      <div class="day-card" style="border-left-color:var(--orange)">
+        <h3>Arrivée à Durrës</h3>
+        <div class="event">
+          <span class="event-time">16h35</span>
+          <div><span class="event-name">Atterrissage à Tirana</span>
+          <span class="event-note">Route vers Durrës (~45 min)</span></div>
+        </div>
+        <div class="event">
+          <span class="event-time">Soir</span>
+          <div><span class="event-name">La Réserve by Duka Winery</span>
+          <span class="event-note">Domaine viticole face à la mer · petit-déjeuner inclus</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="day" onclick="flyTo(41.5763, 19.4674, 13)">
+      <div class="day-badge" style="color:var(--navy)">
+        <span class="num">11</span>
+        <span class="weekday">Samedi</span>
+      </div>
+      <div class="day-card">
+        <h3>Cap Rodon</h3>
+        <div class="event">
+          <span class="event-time">Journée</span>
+          <div><span class="event-name">Cape of Rodon Resort</span>
+          <span class="event-note">Cadre naturel exceptionnel · site historique</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="day" onclick="flyTo(41.7478, 19.6150, 13)">
+      <div class="day-badge" style="color:var(--red)">
+        <span class="num">12</span>
+        <span class="weekday">Dimanche</span>
+      </div>
+      <div class="day-card wedding">
+        <span class="wedding-badge">Le grand jour</span>
+        <h3>Mariage d'Erlinda &amp; David</h3>
+        <div class="event">
+          <span class="event-time">Après-midi</span>
+          <div><span class="event-name">Rambuje Resort · Lezhë</span>
+          <span class="event-note">Toute la famille est là !</span></div>
+        </div>
+        <div class="event">
+          <span class="event-time">18h30</span>
+          <div><span class="event-name">Cérémonie · Hoteli Gjuetise</span>
+          <span class="event-note">Île de Lezhë · brunch piscine le lendemain à 13h</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="day" onclick="flyTo(41.3233, 19.8243, 13)">
+      <div class="day-badge" style="color:var(--green)">
+        <span class="num">13</span>
+        <span class="weekday">Lundi</span>
+      </div>
+      <div class="day-card" style="border-left-color:var(--green)">
+        <h3>Brunch puis Tirana</h3>
+        <div class="event">
+          <span class="event-time">13h00</span>
+          <div><span class="event-name">Brunch piscine · Hoteli Gjuetise</span></div>
+        </div>
+        <div class="event">
+          <span class="event-time">Soir</span>
+          <div><span class="event-name">La Suite Boutique Hotel · Tirana</span>
+          <span class="event-note">Centre-ville · visite à pied</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="day" onclick="flyTo(41.3233, 19.8243, 13)">
+      <div class="day-badge" style="color:var(--navy)">
+        <span class="num">14</span>
+        <span class="weekday">Mardi</span>
+      </div>
+      <div class="day-card">
+        <h3>Tirana &amp; retour</h3>
+        <div class="event">
+          <span class="event-time">Journée</span>
+          <div><span class="event-name">Visite de Tirana à pied</span></div>
+        </div>
+        <div class="event">
+          <span class="event-time">21h15</span>
+          <div><span class="event-name">Départ · Tirana → Amsterdam</span>
+          <span class="event-note">Arrivée 00h05 (15 juil.)</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="hotels">
+    <div class="hotels-header">Hébergements</div>
+    <div class="hotel-row">
+      <span class="hotel-dates">10→11 juil.</span>
+      <span class="hotel-name"><a href="http://lareservebyduka.com/" target="_blank">La Réserve by Duka Winery</a></span>
+      <span class="hotel-place">Durrës</span>
+    </div>
+    <div class="hotel-row">
+      <span class="hotel-dates">11→12 juil.</span>
+      <span class="hotel-name"><a href="https://capeofrodon.al/" target="_blank">Cape of Rodon Resort</a></span>
+      <span class="hotel-place">Cap Rodon</span>
+    </div>
+    <div class="hotel-row">
+      <span class="hotel-dates">12→13 juil.</span>
+      <span class="hotel-name"><a href="https://maps.google.com/?cid=5828284760352295233" target="_blank">Rambuje Resort</a></span>
+      <span class="hotel-place">Lezhë</span>
+    </div>
+    <div class="hotel-row">
+      <span class="hotel-dates">13→14 juil.</span>
+      <span class="hotel-name"><a href="https://maps.google.com/?cid=14659095939530124772" target="_blank">La Suite Boutique Hotel</a></span>
+      <span class="hotel-place">Tirana</span>
+    </div>
+  </div>
+
+</main>
+
+<footer>Olivier &amp; Sandra · Albanie · Juillet 2026</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const map = L.map('map', { zoomControl: true, scrollWheelZoom: false }).setView([41.55, 19.65], 9);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© OpenStreetMap contributors',
+  maxZoom: 18
+}).addTo(map);
+
+function makeIcon(color, size) {
+  size = size || 14;
+  return L.divIcon({
+    className: '',
+    html: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${color};border:2.5px solid white;box-shadow:0 1px 6px rgba(0,0,0,0.35)"></div>`,
+    iconSize: [size, size],
+    iconAnchor: [size/2, size/2],
+    popupAnchor: [0, -size/2 - 4]
+  });
+}
+
+const stops = [
+  { latlng: [41.4147, 19.7206], color: '#1a3a5c', size: 16,
+    day: 'Vendredi 10 · Dimanche 14 juillet',
+    title: 'Aéroport de Tirana (TIA)',
+    detail: 'Arrivée 16h35 · Départ 21h15 (14 juil.)' },
+  { latlng: [41.5167, 19.5537], color: '#e8883a', size: 16,
+    day: 'Vendredi 10 juillet',
+    title: 'La Réserve by Duka Winery',
+    detail: 'Durrës · domaine viticole · 1 nuit<br>Petit-déjeuner inclus' },
+  { latlng: [41.5763, 19.4674], color: '#1a3a5c', size: 16,
+    day: 'Samedi 11 juillet',
+    title: 'Cape of Rodon Resort',
+    detail: 'Cap Rodon · 1 nuit<br>Cadre naturel exceptionnel' },
+  { latlng: [41.7529, 19.5932], color: '#2a7a5c', size: 16,
+    day: 'Dimanche 12 · Lundi 13 juillet',
+    title: 'Rambuje Resort',
+    detail: 'Lezhë · 1 nuit<br>Toute la famille est là !<br>Brunch piscine lundi à 13h (à l'Hoteli Gjuetise)' },
+  { latlng: [41.7478, 19.6150], color: '#c0392b', size: 20,
+    day: 'Dimanche 12 juillet · 18h30',
+    title: '💍 Mariage Erlinda & David',
+    detail: 'Hoteli Gjuetise · Île de Lezhë<br><strong style="color:#c0392b">Cérémonie à partir de 18h30</strong>' },
+  { latlng: [41.3233, 19.8243], color: '#1a3a5c', size: 16,
+    day: 'Lundi 13 · Mardi 14 juillet',
+    title: 'La Suite Boutique Hotel',
+    detail: 'Tirana · 1 nuit<br>Centre-ville · visite à pied' }
+];
+
+const markers = [];
+
+stops.forEach((s, i) => {
+  const m = L.marker(s.latlng, { icon: makeIcon(s.color, s.size) }).addTo(map);
+  const isWedding = i === 4;
+  m.bindPopup(`
+    <div style="font-family:Inter,sans-serif;min-width:180px;${isWedding ? 'border-top:3px solid #c0392b' : ''}">
+      <div class="popup-day" style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#aaa;margin-bottom:4px">${s.day}</div>
+      <div class="popup-title" style="font-size:14px;font-weight:600;color:#1a3a5c;margin-bottom:5px">${s.title}</div>
+      <div class="popup-detail" style="font-size:12px;color:#666;line-height:1.6">${s.detail}</div>
+    </div>
+  `, { maxWidth: 240 });
+  markers.push(m);
+});
+
+const coords = stops.map(s => s.latlng);
+const polyline = L.polyline(coords, {
+  color: '#1a3a5c',
+  weight: 2.5,
+  opacity: 0.4,
+  dashArray: '6, 5'
+}).addTo(map);
+
+window.flyTo = function(lat, lng, zoom) {
+  map.flyTo([lat, lng], zoom, { duration: 1.2 });
+  markers.forEach(m => {
+    if (Math.abs(m.getLatLng().lat - lat) < 0.01 && Math.abs(m.getLatLng().lng - lng) < 0.01) {
+      setTimeout(() => m.openPopup(), 1000);
+    }
+  });
+};
+</script>
+</body>
+</html>
